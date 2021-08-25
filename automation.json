@@ -1,0 +1,190 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "location": {
+            "type": "String",
+            "metadata": {
+                "description": "Location for all resources"
+            }
+        },
+        "automationAccountName": {
+            "defaultValue": "nmw-automation",
+            "type": "String"
+        },
+        "subscriptionId": {
+            "type": "String"
+        },
+        "webAppName": {
+            "type": "String"
+        },
+        "resourceGroupName": {
+            "type": "String"
+        },
+        "updateRunAsScriptUri": {
+            "type": "String"
+        }
+    },
+    "variables": {
+        "automation": {
+            "runbooks": [
+                {
+                    "name": "nmwUpdateRunAs",
+                    "url": "[parameters('updateRunAsScriptUri')]",
+                    "version": "1.0.0.0",
+                    "type": "PowerShell",
+                    "description": "Update using automation Run As account"
+                }
+            ],
+            "modules": {
+                "profile": {
+                    "name": "AzureRM.Profile",
+                    "url": "https://www.powershellgallery.com/api/v2/package/AzureRM.profile/5.8.3"
+                },
+                "other": [
+                    {
+                        "name": "AzureAD",
+                        "url": "https://www.powershellgallery.com/api/v2/package/AzureAD/2.0.2.76"
+                    },
+                    {
+                        "name": "AzureRM.Resources",
+                        "url": "https://www.powershellgallery.com/api/v2/package/AzureRM.Resources/6.7.3"
+                    },
+                    {
+                        "name": "AzureRM.KeyVault",
+                        "url": "https://www.powershellgallery.com/api/v2/package/AzureRM.KeyVault/5.2.1"
+                    },
+                    {
+                        "name": "AzureRM.Automation",
+                        "url": "https://www.powershellgallery.com/api/v2/package/AzureRM.Automation/6.1.1"
+                    },
+                    {
+                        "name": "AzureRM.Compute",
+                        "url": "https://www.powershellgallery.com/api/v2/package/AzureRM.Compute/5.9.1"
+                    },
+                    {
+                        "name": "AzureRM.Websites",
+                        "url": "https://www.powershellgallery.com/api/v2/package/AzureRM.Websites/5.2.0"
+                    }
+                ]
+            }
+        }
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Automation/automationAccounts",
+            "apiVersion": "2020-01-13-preview",
+            "name": "[parameters('automationAccountName')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "sku": {
+                    "name": "Basic"
+                }
+            },
+            "resources": [
+                {
+                    "type": "variables",
+                    "apiVersion": "2020-01-13-preview",
+                    "name": "subscriptionId",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Automation/automationAccounts', parameters('automationAccountName'))]"
+                    ],
+                    "properties": {
+                        "isEncrypted": false,
+                        "description": "Azure Subscription Id",
+                        "value": "[concat('\"', parameters('subscriptionId'), '\"')]"
+                    }
+                },
+                {
+                    "type": "variables",
+                    "apiVersion": "2020-01-13-preview",
+                    "name": "webAppName",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Automation/automationAccounts', parameters('automationAccountName'))]"
+                    ],
+                    "properties": {
+                        "isEncrypted": false,
+                        "description": "Web App Name",
+                        "value": "[concat('\"', parameters('webAppName'), '\"')]"
+                    }
+                },
+                {
+                    "type": "variables",
+                    "apiVersion": "2020-01-13-preview",
+                    "name": "resourceGroupName",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Automation/automationAccounts', parameters('automationAccountName'))]"
+                    ],
+                    "properties": {
+                        "isEncrypted": false,
+                        "description": "Resource group",
+                        "value": "[concat('\"', parameters('resourceGroupName'), '\"')]"
+                    }
+                }
+            ]
+        },
+        {
+            "type": "Microsoft.Automation/automationAccounts/runbooks",
+            "apiVersion": "2020-01-13-preview",
+            "name": "[concat(parameters('automationAccountName'), '/', variables('automation').runbooks[copyIndex()].name)]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Automation/automationAccounts', parameters('automationAccountName'))]"
+            ],
+            "properties": {
+                "description": "[variables('automation').runbooks[copyIndex()].description]",
+                "runbookType": "[variables('automation').runbooks[copyIndex()].type]",
+                "logProgress": false,
+                "logVerbose": true,
+                "publishContentLink": {
+                    "uri": "[variables('automation').runbooks[copyIndex()].url]",
+                    "version": "[variables('automation').runbooks[copyIndex()].version]"
+                }
+            },
+            "copy": {
+                "name": "runbooksLoop",
+                "count": "[length(variables('automation').runbooks)]"
+            }
+        },
+        {
+            "type": "Microsoft.Automation/automationAccounts/modules",
+            "apiVersion": "2015-10-31",
+            "name": "[concat(parameters('automationAccountName'), '/', variables('automation').modules.profile.name)]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Automation/automationAccounts', parameters('automationAccountName'))]"
+            ],
+            "properties": {
+                "contentLink": {
+                    "uri": "[variables('automation').modules.profile.url]"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Automation/automationAccounts/modules",
+            "apiVersion": "2015-10-31",
+            "name": "[concat(parameters('automationAccountName'), '/', variables('automation').modules.other[copyIndex()].name)]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Automation/automationAccounts', parameters('automationAccountName'))]",
+                "[resourceId('Microsoft.Automation/automationAccounts/modules', parameters('automationAccountName'), variables('automation').modules.profile.name)]"
+            ],
+            "properties": {
+                "contentLink": {
+                    "uri": "[variables('automation').modules.other[copyIndex()].url]"
+                }
+            },
+            "copy": {
+                "name": "modulesLoop",
+                "count": "[length(variables('automation').modules.other)]",
+                "mode": "Serial"
+            }
+        }
+    ],
+    "outputs": {
+        "appUrl": {
+            "type": "String",
+            "value": ""
+        }
+    }
+}

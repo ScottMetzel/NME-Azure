@@ -1,0 +1,401 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]",
+            "metadata": {
+                "description": "Location for all resources"
+            }
+        },
+        "appName": {
+            "type": "string",
+            "defaultValue": "nmw-app",
+            "metadata": {
+                "description": "Base name of the resource such as web app name and app service plan"
+            },
+            "minLength": 2
+        },
+        "azureTagPrefix": {
+            "type": "string",
+            "defaultValue": "NMW",
+            "metadata": {
+                "description": "Prefix for Azure Tags"
+            }
+        },
+        "appServicePlanSkuName": {
+            "type": "string",
+            "defaultValue": "B3",
+            "metadata": {
+                "description": "The SKU of App Service Plan"
+            }
+        },
+        "sqlCollation": {
+            "type": "string",
+            "defaultValue": "SQL_Latin1_General_CP1_CI_AS",
+            "metadata": {
+                "description": "The database collation"
+            }
+        },
+        "databaseMaxSize": {
+            "type": "int",
+            "defaultValue": 268435456000
+        },
+        "databaseTier": {
+            "type": "string",
+            "defaultValue": "Standard"
+        },
+        "databaseSkuName": {
+            "type": "string",
+            "defaultValue": "S1"
+        },
+        "_artifactsLocation": {
+            "type": "string",
+            "metadata": {
+                "description": "The base URI where artifacts required by this template are located. When the template is deployed using the accompanying scripts, a private location in the subscription will be used and this value will be automatically generated."
+            },
+            "defaultValue": "[deployment().properties.templateLink.uri]"
+        },
+        "_artifactsLocationSasToken": {
+            "type": "securestring",
+            "metadata": {
+                "description": "The sasToken required to access _artifactsLocation.  When the template is deployed using the accompanying scripts, a sasToken will be automatically generated."
+            },
+            "defaultValue": ""
+        },
+        "_securityGuid": {
+            "type": "securestring",
+            "defaultValue": "[newGuid()]"
+        }
+    },
+    "variables": {
+        "webAppPortalName": "[concat(parameters('appName'), '-', uniqueString(subscription().id, resourceGroup().id))]",
+        "appServicePlanName": "[concat(parameters('appName'), '-plan-', uniqueString(subscription().id, resourceGroup().id))]",
+        "sqlServerName": "[concat(parameters('appName'), '-sql-', uniqueString(subscription().id, resourceGroup().id))]",
+        "databaseName": "[concat(parameters('appName'), '-db')]",
+        "keyVaultName": "[concat(parameters('appName'), '-kv-', uniqueString(subscription().id, resourceGroup().id))]",
+        "appInsightsName": "[concat(parameters('appName'), '-insights-', uniqueString(subscription().id, resourceGroup().id))]",
+        "automationAccountName": "[concat(parameters('appName'), '-automation-', uniqueString(subscription().id, resourceGroup().id))]",
+        "automationSetupURL": "[uri(parameters('_artifactsLocation'), concat('automation.json', parameters('_artifactsLocationSasToken')))]",
+        "lawName": "[concat(parameters('appName'), '-law-', uniqueString(subscription().id, resourceGroup().id))]",
+        "lawSetupURL": "[uri(parameters('_artifactsLocation'), concat('log-analytics.json', parameters('_artifactsLocationSasToken')))]",
+        "sqlServerLogin": "[concat('L', uniqueString(resourceGroup().id, parameters('_securityGuid'), 'f0a91824-fc25-4cc9-937e-f92791fdab21'))]",
+        "sqlServerPassword": "[concat('P', uniqueString(resourceGroup().id, parameters('_securityGuid'), 'e0235df7-82e2-469d-9678-1750453dff32'), 'x', '!')]",
+        "sqlServerSuffix": "[environment().suffixes.sqlServerHostname]",
+        "microsoftLoginUri": "[if(equals(environment().name, 'AzureUSGovernment'), 'https://login.microsoftonline.us/', 'https://login.microsoftonline.com/')]",
+        "scriptedActionAccountName": "[concat(parameters('appName'), '-scripted-actions-', uniqueString(subscription().id, resourceGroup().id))]"
+    },
+    "resources": [
+        {
+            "name": "pid-8c1c30c0-3e0a-4655-9e05-51dea63a0e32-partnercenter",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2020-10-01",
+            "properties": {
+                "mode": "Incremental",
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "resources": []
+                }
+            }
+        },
+        {
+            "apiVersion": "2020-02-02-preview",
+            "name": "[variables('appInsightsName')]",
+            "type": "Microsoft.Insights/components",
+            "location": "[parameters('location')]",
+            "kind": "web",
+            "tags": {
+                "displayName": "AppInsightsComponent"
+            },
+            "properties": {
+                "Application_Type": "web"
+            }
+        },
+        {
+            "name": "[variables('sqlserverName')]",
+            "type": "Microsoft.Sql/servers",
+            "location": "[parameters('location')]",
+            "tags": {
+                "displayName": "SqlServer"
+            },
+            "apiVersion": "2020-08-01-preview",
+            "properties": {
+                "administratorLogin": "[variables('sqlServerLogin')]",
+                "administratorLoginPassword": "[variables('sqlServerPassword')]",
+                "version": "12.0"
+            },
+            "resources": [
+                {
+                    "name": "[variables('databaseName')]",
+                    "type": "databases",
+                    "location": "[parameters('location')]",
+                    "tags": {
+                        "displayName": "Database"
+                    },
+                    "apiVersion": "2020-08-01-preview",
+                    "dependsOn": [
+                        "[variables('sqlserverName')]"
+                    ],
+                    "properties": {
+                        "collation": "[parameters('sqlCollation')]",
+                        "maxSizeBytes": "[parameters('databaseMaxSize')]"
+                    },
+                    "sku": {
+                        "name": "[parameters('databaseSkuName')]",
+                        "tier": "[parameters('databaseTier')]"
+                    }
+                },
+                {
+                    "type": "firewallrules",
+                    "apiVersion": "2020-08-01-preview",
+                    "dependsOn": [
+                        "[variables('sqlserverName')]"
+                    ],
+                    "location": "[parameters('location')]",
+                    "name": "AllowAllWindowsAzureIps",
+                    "properties": {
+                        "endIpAddress": "0.0.0.0",
+                        "startIpAddress": "0.0.0.0"
+                    }
+                }
+            ]
+        },
+        {
+            "apiVersion": "2019-08-01",
+            "dependsOn": [
+                "[resourceId('Microsoft.Sql/servers', variables('sqlserverName'))]"
+            ],
+            "type": "Microsoft.Web/serverfarms",
+            "kind": "app",
+            "name": "[variables('appServicePlanName')]",
+            "location": "[parameters('location')]",
+            "properties": {},
+            "sku": {
+                "name": "[parameters('appServicePlanSkuName')]"
+            }
+        },
+        {
+            "apiVersion": "2019-08-01",
+            "type": "Microsoft.Web/sites",
+            "kind": "app",
+            "name": "[variables('webAppPortalName')]",
+            "location": "[parameters('location')]",
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "properties": {
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
+                "siteConfig": {
+                    "AlwaysOn": true,
+                    "use32BitWorkerProcess": false,
+                    "appSettings": [
+                        {
+                            "name": "AzureAd:Instance",
+                            "value": "[variables('microsoftLoginUri')]"
+                        },
+                        {
+                            "name": "Deployment:AzureType",
+                            "value": "[environment().name]"
+                        },
+                        {
+                            "name": "Deployment:Region",
+                            "value": "[parameters('location')]"
+                        },
+                        {
+                            "name": "Deployment:KeyVaultName",
+                            "value": "[variables('keyVaultName')]"
+                        },
+                        {
+                            "name": "Deployment:SubscriptionId",
+                            "value": "[subscription().subscriptionId]"
+                        },
+                        {
+                            "name": "Deployment:SubscriptionDisplayName",
+                            "value": "[subscription().displayName]"
+                        },
+                        {
+                            "name": "Deployment:TenantId",
+                            "value": "[subscription().tenantId]"
+                        },
+                        {
+                            "name": "Deployment:ResourceGroupName",
+                            "value": "[resourceGroup().name]"
+                        },
+                        {
+                            "name": "Deployment:WebAppName",
+                            "value": "[variables('webAppPortalName')]"
+                        },
+                        {
+                            "name": "Deployment:AutomationAccountName",
+                            "value": "[variables('automationAccountName')]"
+                        },
+                        {
+                            "name": "Deployment:AutomationEnabled",
+                            "value": "True"
+                        },
+                        {
+                            "name": "Deployment:AzureTagPrefix",
+                            "value": "[parameters('azureTagPrefix')]"
+                        },
+                        {
+                            "name": "Deployment:UpdaterRunbookRunAs",
+                            "value": "nmwUpdateRunAs"
+                        },
+                        {
+                            "name": "Deployment:LogAnalyticsWorkspace",
+                            "value": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('lawName'))]"
+                        },
+                        {
+                            "name": "Deployment:ScriptedActionAccount",
+                            "value": "[resourceId('Microsoft.Automation/automationAccounts', variables('scriptedActionAccountName'))]"
+                        },
+                        {
+                            "name": "ApplicationInsights:InstrumentationKey",
+                            "value": "[reference(resourceId('Microsoft.Insights/components', variables('appInsightsName'))).InstrumentationKey]"
+                        },
+                        {
+                            "name": "ApplicationInsights:ConnectionString",
+                            "value": "[reference(resourceId('Microsoft.Insights/components', variables('appInsightsName'))).ConnectionString]"
+                        }
+                    ]
+                }
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
+                "[resourceId('microsoft.insights/components/', variables('appInsightsName'))]"
+            ],
+            "resources": [
+                {
+                    "name": "MSDeploy",
+                    "type": "extensions",
+                    "location": "[parameters('location')]",
+                    "apiVersion": "2019-08-01",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Web/sites', variables('webAppPortalName'))]"
+                    ],
+                    "properties": {
+                        "packageUri": "[uri(parameters('_artifactsLocation'), concat('web-app/app.zip', parameters('_artifactsLocationSasToken')))]"
+                    }
+                }
+            ]
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults",
+            "name": "[variables('keyVaultName')]",
+            "apiVersion": "2019-09-01",
+            "location": "[parameters('location')]",
+            "properties": {
+                "sku": {
+                    "family": "A",
+                    "name": "Standard"
+                },
+                "tenantId": "[reference(resourceId('Microsoft.Web/sites/', variables('webAppPortalName')), '2019-08-01', 'Full').identity.tenantId]",
+                "accessPolicies": [
+                    {
+                        "tenantId": "[reference(resourceId('Microsoft.Web/sites/', variables('webAppPortalName')), '2019-08-01', 'Full').identity.tenantId]",
+                        "objectId": "[reference(resourceId('Microsoft.Web/sites/', variables('webAppPortalName')), '2019-08-01', 'Full').identity.principalId]",
+                        "permissions": {
+                            "secrets": [
+                                "get",
+                                "list",
+                                "set",
+                                "delete"
+                            ]
+                        }
+                    }
+                ],
+                "enabledForDeployment": false
+            },
+            "resources": [
+                {
+                    "type": "Microsoft.KeyVault/vaults/secrets",
+                    "name": "[concat(variables('keyVaultName'), '/ConnectionStrings--DefaultConnection')]",
+                    "apiVersion": "2019-09-01",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]"
+                    ],
+                    "properties": {
+                        "value": "[concat('Server=tcp:', variables('sqlServerName'), variables('sqlServerSuffix'), ',1433;Initial Catalog=', variables('databaseName'), ';Persist Security Info=False;User ID=', variables('sqlServerLogin'), ';Password=', variables('sqlServerPassword'), ';MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;')]",
+                        "attributes": {
+                            "enabled": true
+                        }
+                    }
+                }
+            ],
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', variables('webAppPortalName'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Automation/automationAccounts",
+            "apiVersion": "2020-01-13-preview",
+            "name": "[variables('scriptedActionAccountName')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "sku": {
+                    "name": "Basic"
+                }
+            }
+        },
+        {
+            "name": "SettingUpAutomation",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2019-10-01",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('automationSetupURL')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "location": {
+                        "value": "[parameters('location')]"
+                    },
+                    "automationAccountName": {
+                        "value": "[variables('automationAccountName')]"
+                    },
+                    "subscriptionId": {
+                        "value": "[subscription().SubscriptionId]"
+                    },
+                    "resourceGroupName": {
+                        "value": "[resourceGroup().name]"
+                    },
+                    "webAppName": {
+                        "value": "[variables('webAppPortalName')]"
+                    },
+                    "updateRunAsScriptUri": {
+                        "value": "[uri(parameters('_artifactsLocation'), concat('scripts/nmw-update-run-as.ps1', parameters('_artifactsLocationSasToken')))]"
+                    }
+                }
+            }
+        },
+        {
+            "name": "SettingUpLaw",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2019-10-01",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('lawSetupURL')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "location": {
+                        "value": "[parameters('location')]"
+                    },
+                    "workspaceName": {
+                        "value": "[variables('lawName')]"
+                    }
+                }
+            }
+        }
+    ],
+    "outputs": {
+        "appUrl": {
+            "type": "string",
+            "value": "[concat('https://', variables('webAppPortalName'), '.azurewebsites.net')]"
+        }
+    }
+}

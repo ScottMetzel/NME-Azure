@@ -1,0 +1,464 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "workspaceName": {
+            "type": "String",
+            "metadata": {
+                "description": "Workspace name"
+            }
+        },
+        "location": {
+            "type": "String",
+            "metadata": {
+                "description": "Location for all resources."
+            }
+        }
+    },
+    "resources": [
+        {
+            "type": "Microsoft.OperationalInsights/workspaces",
+            "apiVersion": "2020-08-01",
+            "name": "[parameters('workspaceName')]",
+            "location": "[parameters('location')]",
+            "tags": {
+                "NMW_OBJECT_TYPE": "LOG_ANALYTICS_WORKSPACE"
+            },
+            "resources": [
+                {
+                    "type": "datasources",
+                    "apiVersion": "2020-08-01",
+                    "name": "SystemEvents",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+                    ],
+                    "kind": "WindowsEvent",
+                    "properties": {
+                        "eventLogName": "System",
+                        "eventTypes": [
+                            {
+                                "eventType": "Error"
+                            },
+                            {
+                                "eventType": "Warning"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "type": "datasources",
+                    "apiVersion": "2020-08-01",
+                    "name": "ApplicationEvents",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+                    ],
+                    "kind": "WindowsEvent",
+                    "properties": {
+                        "eventLogName": "Application",
+                        "eventTypes": [
+                            {
+                                "eventType": "Error"
+                            },
+                            {
+                                "eventType": "Warning"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "type": "datasources",
+                    "apiVersion": "2020-08-01",
+                    "name": "TerminalServicesLocalSessionManagerOperational",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+                    ],
+                    "kind": "WindowsEvent",
+                    "properties": {
+                        "eventLogName": "Microsoft-Windows-TerminalServices-LocalSessionManager/Operational",
+                        "eventTypes": [
+                            {
+                                "eventType": "Error"
+                            },
+                            {
+                                "eventType": "Warning"
+                            },
+                            {
+                                "eventType": "Information"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "type": "datasources",
+                    "apiVersion": "2020-08-01",
+                    "name": "TerminalServicesRemoteConnectionManagerAdmin",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+                    ],
+                    "kind": "WindowsEvent",
+                    "properties": {
+                        "eventLogName": "Microsoft-Windows-TerminalServices-RemoteConnectionManager/Admin",
+                        "eventTypes": [
+                            {
+                                "eventType": "Error"
+                            },
+                            {
+                                "eventType": "Warning"
+                            },
+                            {
+                                "eventType": "Information"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "type": "datasources",
+                    "apiVersion": "2020-08-01",
+                    "name": "MicrosoftFSLogixAppsOperational",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+                    ],
+                    "kind": "WindowsEvent",
+                    "properties": {
+                        "eventLogName": "Microsoft-FSLogix-Apps/Operational",
+                        "eventTypes": [
+                            {
+                                "eventType": "Error"
+                            },
+                            {
+                                "eventType": "Warning"
+                            },
+                            {
+                                "eventType": "Information"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "type": "datasources",
+                    "apiVersion": "2020-08-01",
+                    "name": "MicrosoftFSLogixAppsAdmin",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+                    ],
+                    "kind": "WindowsEvent",
+                    "properties": {
+                        "eventLogName": "Microsoft-FSLogix-Apps/Admin",
+                        "eventTypes": [
+                            {
+                                "eventType": "Error"
+                            },
+                            {
+                                "eventType": "Warning"
+                            },
+                            {
+                                "eventType": "Information"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "type": "datasources",
+                    "apiVersion": "2020-08-01",
+                    "name": "perfcounter1",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+                    ],
+                    "kind": "WindowsPerformanceCounter",
+                    "properties": {
+                        "objectName": "LogicalDisk",
+                        "instanceName": "C:",
+                        "intervalSeconds": 60,
+                        "counterName": "% Free Space"
+                    }
+                },
+                {
+                    "type": "datasources",
+                    "apiVersion": "2020-08-01",
+                    "name": "perfcounter2",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+                    ],
+                    "kind": "WindowsPerformanceCounter",
+                    "properties": {
+                        "objectName": "LogicalDisk",
+                        "instanceName": "C:",
+                        "intervalSeconds": 30,
+                        "counterName": "Avg. Disk Queue Length"
+                    }
+                },
+                {
+                    "type": "datasources",
+                    "apiVersion": "2020-08-01",
+                    "name": "perfcounter3",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+                    ],
+                    "kind": "WindowsPerformanceCounter",
+                    "properties": {
+                        "objectName": "LogicalDisk",
+                        "instanceName": "C:",
+                        "intervalSeconds": 60,
+                        "counterName": "Avg. Disk sec/Transfer"
+                    }
+                },
+                {
+                    "type": "datasources",
+                    "apiVersion": "2020-08-01",
+                    "name": "perfcounter4",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+                    ],
+                    "kind": "WindowsPerformanceCounter",
+                    "properties": {
+                        "objectName": "LogicalDisk",
+                        "instanceName": "C:",
+                        "intervalSeconds": 30,
+                        "counterName": "Current Disk Queue Length"
+                    }
+                },
+                {
+                    "type": "datasources",
+                    "apiVersion": "2020-08-01",
+                    "name": "perfcounter5",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+                    ],
+                    "kind": "WindowsPerformanceCounter",
+                    "properties": {
+                        "objectName": "Memory",
+                        "instanceName": "*",
+                        "intervalSeconds": 30,
+                        "counterName": "Available Mbytes"
+                    }
+                },
+                {
+                    "type": "datasources",
+                    "apiVersion": "2020-08-01",
+                    "name": "perfcounter6",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+                    ],
+                    "kind": "WindowsPerformanceCounter",
+                    "properties": {
+                        "objectName": "Memory",
+                        "instanceName": "*",
+                        "intervalSeconds": 30,
+                        "counterName": "Page Faults/sec"
+                    }
+                },
+                {
+                    "type": "datasources",
+                    "apiVersion": "2020-08-01",
+                    "name": "perfcounter7",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+                    ],
+                    "kind": "WindowsPerformanceCounter",
+                    "properties": {
+                        "objectName": "Memory",
+                        "instanceName": "*",
+                        "intervalSeconds": 30,
+                        "counterName": "Pages/sec"
+                    }
+                },
+                {
+                    "type": "datasources",
+                    "apiVersion": "2020-08-01",
+                    "name": "perfcounter8",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+                    ],
+                    "kind": "WindowsPerformanceCounter",
+                    "properties": {
+                        "objectName": "Memory",
+                        "instanceName": "*",
+                        "intervalSeconds": 30,
+                        "counterName": "% Committed Bytes In Use"
+                    }
+                },
+                {
+                    "type": "datasources",
+                    "apiVersion": "2020-08-01",
+                    "name": "perfcounter9",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+                    ],
+                    "kind": "WindowsPerformanceCounter",
+                    "properties": {
+                        "objectName": "PhysicalDisk",
+                        "instanceName": "*",
+                        "intervalSeconds": 30,
+                        "counterName": "Avg. Disk Queue Length"
+                    }
+                },
+                {
+                    "type": "datasources",
+                    "apiVersion": "2020-08-01",
+                    "name": "perfcounter10",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+                    ],
+                    "kind": "WindowsPerformanceCounter",
+                    "properties": {
+                        "objectName": "PhysicalDisk",
+                        "instanceName": "*",
+                        "intervalSeconds": 30,
+                        "counterName": "Avg. Disk sec/Read"
+                    }
+                },
+                {
+                    "type": "datasources",
+                    "apiVersion": "2020-08-01",
+                    "name": "perfcounter11",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+                    ],
+                    "kind": "WindowsPerformanceCounter",
+                    "properties": {
+                        "objectName": "PhysicalDisk",
+                        "instanceName": "*",
+                        "intervalSeconds": 30,
+                        "counterName": "Avg. Disk sec/Transfer"
+                    }
+                },
+                {
+                    "type": "datasources",
+                    "apiVersion": "2020-08-01",
+                    "name": "perfcounter12",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+                    ],
+                    "kind": "WindowsPerformanceCounter",
+                    "properties": {
+                        "objectName": "PhysicalDisk",
+                        "instanceName": "*",
+                        "intervalSeconds": 30,
+                        "counterName": "Avg. Disk sec/Write"
+                    }
+                },
+                {
+                    "type": "datasources",
+                    "apiVersion": "2020-08-01",
+                    "name": "perfcounter18",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+                    ],
+                    "kind": "WindowsPerformanceCounter",
+                    "properties": {
+                        "objectName": "Processor Information",
+                        "instanceName": "_Total",
+                        "intervalSeconds": 30,
+                        "counterName": "% Processor Time"
+                    }
+                },
+                {
+                    "type": "datasources",
+                    "apiVersion": "2020-08-01",
+                    "name": "perfcounter19",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+                    ],
+                    "kind": "WindowsPerformanceCounter",
+                    "properties": {
+                        "objectName": "Terminal Services",
+                        "instanceName": "*",
+                        "intervalSeconds": 60,
+                        "counterName": "Active Sessions"
+                    }
+                },
+                {
+                    "type": "datasources",
+                    "apiVersion": "2020-08-01",
+                    "name": "perfcounter20",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+                    ],
+                    "kind": "WindowsPerformanceCounter",
+                    "properties": {
+                        "objectName": "Terminal Services",
+                        "instanceName": "*",
+                        "intervalSeconds": 60,
+                        "counterName": "Inactive Sessions"
+                    }
+                },
+                {
+                    "type": "datasources",
+                    "apiVersion": "2020-08-01",
+                    "name": "perfcounter21",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+                    ],
+                    "kind": "WindowsPerformanceCounter",
+                    "properties": {
+                        "objectName": "Terminal Services",
+                        "instanceName": "*",
+                        "intervalSeconds": 60,
+                        "counterName": "Total Sessions"
+                    }
+                },
+                {
+                    "type": "datasources",
+                    "apiVersion": "2020-08-01",
+                    "name": "perfcounter22",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+                    ],
+                    "kind": "WindowsPerformanceCounter",
+                    "properties": {
+                        "objectName": "User Input Delay per Process",
+                        "instanceName": "*",
+                        "intervalSeconds": 30,
+                        "counterName": "Max Input Delay"
+                    }
+                },
+                {
+                    "type": "datasources",
+                    "apiVersion": "2020-08-01",
+                    "name": "perfcounter23",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+                    ],
+                    "kind": "WindowsPerformanceCounter",
+                    "properties": {
+                        "objectName": "User Input Delay per Session",
+                        "instanceName": "*",
+                        "intervalSeconds": 30,
+                        "counterName": "Max Input Delay"
+                    }
+                },
+                {
+                    "type": "datasources",
+                    "apiVersion": "2020-08-01",
+                    "name": "perfcounter24",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+                    ],
+                    "kind": "WindowsPerformanceCounter",
+                    "properties": {
+                        "objectName": "RemoteFX Network",
+                        "instanceName": "*",
+                        "intervalSeconds": 30,
+                        "counterName": "Current TCP RTT"
+                    }
+                },
+                {
+                    "type": "datasources",
+                    "apiVersion": "2020-08-01",
+                    "name": "perfcounter25",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+                    ],
+                    "kind": "WindowsPerformanceCounter",
+                    "properties": {
+                        "objectName": "RemoteFX Network",
+                        "instanceName": "*",
+                        "intervalSeconds": 30,
+                        "counterName": "Current UDP Bandwidth"
+                    }
+                }
+            ]
+        }
+    ],
+    "outputs": {}
+}
