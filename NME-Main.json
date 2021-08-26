@@ -113,8 +113,7 @@
         "baseSequenceNumber02Formatted": "[format('{0:00}', variables('baseSequenceNumber02'))]",
         "appInsightsName": "[concat(parameters('DeploymentEnvironment'),'-APPIN-',parameters('BaseName'),'-',variables('baseSequenceNumberFormatted'))]",
         "appServiceName": "[concat(parameters('DeploymentEnvironment'),'-APP-',parameters('BaseName'),'-',variables('baseSequenceNumberFormatted'))]",
-        "appServiceAppPackageURI": "
-        https: //catalogartifact.azureedge.net/publicartifacts/nerdio.nerdio_wvd_manager-3569ee61-5bd2-4f19-a0f1-4e3dc403f20e-nwm-plan/Artifacts/web-app/app.zip",
+        "appServiceAppPackageURI": "https: //catalogartifact.azureedge.net/publicartifacts/nerdio.nerdio_wvd_manager-3569ee61-5bd2-4f19-a0f1-4e3dc403f20e-nwm-plan/Artifacts/web-app/app.zip",
         "appServicePlanName": "[concat(parameters('DeploymentEnvironment'),'-APPSP-',parameters('BaseName'),'-',variables('baseSequenceNumberFormatted'))]",
         "azureADLoginURI": "[if(equals(environment().name, 'AzureUSGovernment'), 'https://login.microsoftonline.us/', 'https://login.microsoftonline.com/')]",
         "automationAccountName": "[concat(parameters('DeploymentEnvironment'),'-AA-',parameters('BaseName'),'-',variables('baseSequenceNumberFormatted'))]",
