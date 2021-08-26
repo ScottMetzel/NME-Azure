@@ -25,6 +25,7 @@
         "BaseName": {
             "type": "string",
             "minLength": 2,
+            "maxLength": 10,
             "metadata": {
                 "description": "This parameter is used as a base name for all Azure resources created during deployment, e.g., 'Dev-APP-BaseName-01'."
             }
@@ -93,7 +94,7 @@
             "metadata": {
                 "description": "The base URI where artifacts required by this template are located. When the template is deployed using the accompanying scripts, a private location in the subscription will be used and this value will be automatically generated."
             },
-            "defaultValue": "[deployment().properties.templateLink.uri]"
+            "defaultValue": ""
         },
         "_artifactsLocationSasToken": {
             "type": "securestring",
@@ -112,11 +113,13 @@
         "baseSequenceNumber02Formatted": "[format('{0:00}', variables('baseSequenceNumber02'))]",
         "appInsightsName": "[concat(parameters('DeploymentEnvironment'),'-APPIN-',parameters('BaseName'),'-',variables('baseSequenceNumberFormatted'))]",
         "appServiceName": "[concat(parameters('DeploymentEnvironment'),'-APP-',parameters('BaseName'),'-',variables('baseSequenceNumberFormatted'))]",
+        "appServiceAppPackageURI": "
+        https: //catalogartifact.azureedge.net/publicartifacts/nerdio.nerdio_wvd_manager-3569ee61-5bd2-4f19-a0f1-4e3dc403f20e-nwm-plan/Artifacts/web-app/app.zip",
         "appServicePlanName": "[concat(parameters('DeploymentEnvironment'),'-APPSP-',parameters('BaseName'),'-',variables('baseSequenceNumberFormatted'))]",
         "azureADLoginURI": "[if(equals(environment().name, 'AzureUSGovernment'), 'https://login.microsoftonline.us/', 'https://login.microsoftonline.com/')]",
         "automationAccountName": "[concat(parameters('DeploymentEnvironment'),'-AA-',parameters('BaseName'),'-',variables('baseSequenceNumberFormatted'))]",
         "automationAccountName02": "[concat(parameters('DeploymentEnvironment'),'-AA-',parameters('BaseName'),'-',variables('baseSequenceNumber02Formatted'))]",
-        "automationAccountRunbookUpdateRunAsScriptURI": "[uri(parameters('_artifactsLocation'), concat('scripts/automation.json', parameters('_artifactsLocationSasToken')))]",
+        "automationAccountRunbookUpdateRunAsScriptURI": "[uri(parameters('_artifactsLocation'), concat('scripts/nmw-update-run-as.ps1', parameters('_artifactsLocationSasToken')))]",
         "automationAccountProperties": {
             "runbooks": [
                 {
@@ -162,7 +165,7 @@
         },
         "sqlServerName": "[concat(parameters('DeploymentEnvironment'),'-ASQL-',parameters('BaseName'),'-',variables('baseSequenceNumberFormatted'))]",
         "sqlServerSuffix": "[environment().suffixes.sqlServerHostname]",
-        "sqlDatabaseName": "[concat(parameters('DeploymentEnvironment'),'-ASQLDB-',parameters('BaseName'),'-',variables('baseSequenceNumberFormatted'))]",
+        "sqlDatabaseName": "[toLower(concat(parameters('DeploymentEnvironment'),'-ASQLDB-',parameters('BaseName'),'-',variables('baseSequenceNumberFormatted')))]",
         "keyVaultName": "[concat(parameters('DeploymentEnvironment'),'-KV-',parameters('BaseName'),'-',variables('baseSequenceNumberFormatted'))]",
         "logAnalyticsWorkspaceName": "[concat(parameters('DeploymentEnvironment'),'-LAW-',parameters('BaseName'),'-',variables('baseSequenceNumberFormatted'))]"
     },
@@ -185,9 +188,6 @@
             "apiVersion": "2019-08-01",
             "name": "[variables('appServicePlanName')]",
             "location": "[parameters('Region')]",
-            "dependsOn": [
-                "[resourceId('Microsoft.Sql/servers', variables('sqlserverName'))]"
-            ],
             "kind": "app",
             "properties": {},
             "sku": {
@@ -294,7 +294,7 @@
                         "[resourceId('Microsoft.Web/sites', variables('appServiceName'))]"
                     ],
                     "properties": {
-                        "packageUri": "[uri(parameters('_artifactsLocation'), concat('web-app/app.zip', parameters('_artifactsLocationSasToken')))]"
+                        "packageUri": "[variables('appServiceAppPackageURI')]"
                     }
                 }
             ]
@@ -397,15 +397,15 @@
                 "[resourceId('Microsoft.Automation/automationAccounts', variables('automationAccountName'))]",
                 "[resourceId('Microsoft.Automation/automationAccounts/modules', variables('automationAccountName'), variables('automationAccountProperties').modules.profile.name)]"
             ],
-            "properties": {
-                "contentLink": {
-                    "uri": "[variables('automationAccountProperties').modules.other[copyIndex()].url]"
-                }
-            },
             "copy": {
                 "name": "modulesLoop",
                 "count": "[length(variables('automationAccountProperties').modules.other)]",
                 "mode": "Serial"
+            },
+            "properties": {
+                "contentLink": {
+                    "uri": "[variables('automationAccountProperties').modules.other[copyIndex()].url]"
+                }
             }
         },
         {
