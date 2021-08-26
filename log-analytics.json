@@ -24,6 +24,7 @@
             "tags": {
                 "NMW_OBJECT_TYPE": "LOG_ANALYTICS_WORKSPACE"
             },
+            "properties": {},
             "resources": [
                 {
                     "type": "datasources",
