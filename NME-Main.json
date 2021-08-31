@@ -358,6 +358,10 @@
             "dependsOn": [
                 "[resourceId('Microsoft.Automation/automationAccounts', variables('automationAccountName'))]"
             ],
+            "copy": {
+                "name": "runbooksLoop",
+                "count": "[length(variables('automationAccountProperties').runbooks)]"
+            },
             "properties": {
                 "description": "[variables('automationAccountProperties').runbooks[copyIndex()].description]",
                 "runbookType": "[variables('automationAccountProperties').runbooks[copyIndex()].type]",
@@ -367,10 +371,6 @@
                     "uri": "[variables('automationAccountProperties').runbooks[copyIndex()].url]",
                     "version": "[variables('automationAccountProperties').runbooks[copyIndex()].version]"
                 }
-            },
-            "copy": {
-                "name": "runbooksLoop",
-                "count": "[length(variables('automationAccountProperties').runbooks)]"
             }
         },
         {

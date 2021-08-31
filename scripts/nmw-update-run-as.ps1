@@ -163,10 +163,10 @@ function Start-AppServiceWithRetries {
     Invoke-CommandWithRetries -MaxTries $MaxTries -SleepSeconds $SleepSeconds -ScriptName "Start App Service" `
         -ScriptToRun { Start-AzureRmWebApp -ResourceGroupName $ResourceGroupName -Name $Name } | `
         ForEach-Object { if ($_ -is [string]) {
-            Write-Output $_ 
+            Write-Output $_
         }
         else {
-            $startAppServiceResult = $_ 
+            $startAppServiceResult = $_
         } }
 
     if ($startAppServiceResult.Success) {
@@ -195,10 +195,10 @@ function Start-ProvisionWebJobWithRetries {
     Invoke-CommandWithRetries -MaxTries $MaxTries -SleepSeconds $SleepSeconds -ScriptName "Start provison web job" `
         -ScriptToRun { Start-WebAppJob -AuthInfo $AuthInfo -Name $Name } | `
         ForEach-Object { if ($_ -is [string]) {
-            Write-Output $_ 
+            Write-Output $_
         }
         else {
-            $startWebJobResult = $_ 
+            $startWebJobResult = $_
         } }
 
     if ($startWebJobResult.Success) {
@@ -229,10 +229,10 @@ function Publish-AppWithRetries {
     Invoke-CommandWithRetries -MaxTries $MaxTries -SleepSeconds $SleepSeconds -ScriptName "Publish web app" `
         -ScriptToRun { Publish-WebApp -ArchivePath $ArchivePath -AuthInfo $AuthInfo -Name $Name -Verbose } | `
         ForEach-Object { if ($_ -is [string]) {
-            Write-Output $_ 
+            Write-Output $_
         }
         else {
-            $publishResult = $_ 
+            $publishResult = $_
         } }
 
     if ($publishResult.Success) {
@@ -283,10 +283,10 @@ $stopProvisonWebJobResult = $null
 Invoke-CommandWithRetries -MaxTries 5 -SleepSeconds 30 -ScriptName "Stop provison web job" `
     -ScriptToRun { Stop-WebAppJob -AuthInfo $authInfo -Name $webAppName } | `
     ForEach-Object { if ($_ -is [string]) {
-        Write-Output $_ 
+        Write-Output $_
     }
     else {
-        $stopProvisonWebJobResult = $_ 
+        $stopProvisonWebJobResult = $_
     } }
 
 if (!$stopProvisonWebJobResult.Success) {
@@ -307,10 +307,10 @@ $stopWebAppResult = $null
 Invoke-CommandWithRetries -MaxTries 5 -SleepSeconds 30 -ScriptName "Stop web app" `
     -ScriptToRun { Stop-AzureRmWebApp -ResourceGroupName $resourceGroupName -Name $webAppName } | `
     ForEach-Object { if ($_ -is [string]) {
-        Write-Output $_ 
+        Write-Output $_
     }
     else {
-        $stopWebAppResult = $_ 
+        $stopWebAppResult = $_
     } }
 
 if (!$stopWebAppResult.Success) {
